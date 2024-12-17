@@ -42,8 +42,7 @@ class WeatherService:
             "lat": lat,
             "lon": lon
         })
-        if r.status_code != 200:
-            return None
+        r.raise_for_status()
 
         r_json = r.json()
         return r_json["list"]
@@ -59,8 +58,7 @@ class WeatherService:
 
         return daily_3hourly_forecast
 
-    @staticmethod
-    def _make_1day_forecast(hourly_forecast: list) -> dict:
+    def _make_1day_forecast(self, hourly_forecast: list) -> dict:
         day_forecast = {}
         day_forecast["temperature"] = round(
             mean([hfc["main"]["temp"] for hfc in hourly_forecast]), 1
@@ -75,4 +73,19 @@ class WeatherService:
             mean([hfc["main"]["humidity"] for hfc in hourly_forecast])
         )
         day_forecast["date"] = hourly_forecast[0]["dt_txt"].split()[0]
+        day_forecast["verdict"] = self._get_weather_verdict(day_forecast)
         return day_forecast
+
+    def _get_weather_verdict(self, conditions: dict) -> str:
+        if self._is_weather_good(conditions):
+            return "Самое время для прогулки!"
+        else:
+            return "Прогулка не самый лучший выбор."
+
+    @staticmethod
+    def _is_weather_good(conditions: dict) -> bool:
+        return all([
+            0 <= conditions["temperature"] <= 35,
+            conditions["wind_speed"] <= 50,
+            conditions["probability_of_precipitation"] <= 70
+        ])

@@ -9,8 +9,7 @@ class Geocoder:
         url = f"http://api.openweathermap.org/geo/1.0/direct?q={city}&appid={self.api_key}&limit=5"
         r = requests.get(url)
 
-        if r.status_code != 200:
-            return None
+        r.raise_for_status()
         r_json = r.json()
         if not r_json:
             return None
