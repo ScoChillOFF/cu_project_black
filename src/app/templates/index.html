@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="static/style.css">
+        <title>Прогноз для ваших маршрутов</title>
+    </head>
+    <body>
+        <div class="main">
+            <form action="/" method="post">
+                <h1>Прогноз для ваших маршрутов</h1>
+                {% if error_message %}
+                    <p class="error">{{ error_message }}</p>
+                {% endif %}
+                <div>
+                    <input type="text" id="departureCity" name="departureCity" placeholder="Введите город отправления">
+                </div>
+                <div>
+                    <input type="text" id="destinationCity" name="destinationCity" placeholder="Введите город назначения">
+                </div>
+                <button type="submit">Отправить</button>
+            </form>
+        </div>
+    </body>
+</html>

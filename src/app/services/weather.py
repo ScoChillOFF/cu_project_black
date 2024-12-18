@@ -1,8 +1,10 @@
+from pprint import pprint
+
 import requests
 
 from statistics import mean
 
-from geocoder import Geocoder
+from app.services.geocoder import Geocoder
 
 
 class WeatherService:
@@ -14,7 +16,7 @@ class WeatherService:
         if not (1 <= days <= 5):
             raise ValueError("Количество дней должно быть от 1 до 5")
         daily_5days_forecast = self._get_daily_5days_forecast(city)
-        if daily_5days_forecast is None:
+        if not daily_5days_forecast:
             return None
         return daily_5days_forecast[:days]
 
@@ -54,7 +56,9 @@ class WeatherService:
         day_3hourly_forecast = []
         for epoch in hourly_forecast:
             if epoch["dt_txt"].split()[-1] == "00:00:00" and day_3hourly_forecast:
-                daily_3hourly_forecast.append(epoch)
+                daily_3hourly_forecast.append(day_3hourly_forecast)
+                day_3hourly_forecast = []
+            day_3hourly_forecast.append(epoch)
 
         return daily_3hourly_forecast
 
