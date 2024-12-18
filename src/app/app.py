@@ -1,4 +1,5 @@
 import pandas as pd
+import requests
 from flask import Flask, render_template, request, redirect, url_for
 import dash
 import plotly.express as px
@@ -138,30 +139,36 @@ def update_dropdown_options(_):
 def index():
     if request.method == "GET":
         return render_template("index.html")
-    if request.method == "POST":
-        departure_city = request.form.get("departureCity")
-        destination_city = request.form.get("destinationCity")
-        if not departure_city or not destination_city:
-            error_message = "Пожалуйста, введите названия обоих городов."
-            return render_template("index.html", error_message=error_message)
-        if not is_connected():
-            error_message = "Нет подключения к интернету."
-            return render_template("index.html", error_message=error_message)
-        weather_service = WeatherService(config.api_key)
-        geocoder = Geocoder(config.api_key)
-        cities_data = []
-        for city in [departure_city, destination_city]:
+    departure_city = request.form.get("departureCity")
+    destination_city = request.form.get("destinationCity")
+    additional_cities = request.form.get("additionalCities", [])
+    if not departure_city or not destination_city:
+        error_message = "Пожалуйста, введите названия обоих городов."
+        return render_template("index.html", error_message=error_message)
+    if additional_cities:
+        additional_cities = [city.strip() for city in additional_cities.split(",")]
+    if not is_connected():
+        error_message = "Нет подключения к интернету."
+        return render_template("index.html", error_message=error_message)
+    weather_service = WeatherService(config.api_key)
+    geocoder = Geocoder(config.api_key)
+    cities_data = []
+    try:
+        for city in [departure_city, *additional_cities, destination_city]:
             city = city.capitalize()
-            lat, lon = geocoder.get_coordinates_by_city(city)
             weather = weather_service.get_forecast_for(city, 5)
             if weather is None:
                 error_message = f"Не удалось получить данные для города: {city}"
                 return render_template("index.html", error_message=error_message)
+            lat, lon = geocoder.get_coordinates_by_city(city)
             city_data = [{**forecast, "lat": lat, "lon": lon, "city_name": city} for forecast in weather]
             cities_data.extend(city_data)
-        global df
-        df = pd.DataFrame(columns=list(cities_data[0].keys()), data=cities_data)
-        return redirect(url_for("dash_view"))
+    except requests.RequestException:
+        error_message = "Произошла ошибка во время получения данных"
+        return render_template("index.html", error_message=error_message)
+    global df
+    df = pd.DataFrame(columns=list(cities_data[0].keys()), data=cities_data)
+    return redirect(url_for("dash_view"))
 
 
 @server.before_request
