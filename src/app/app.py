@@ -3,6 +3,7 @@ import requests
 from flask import Flask, render_template, request, redirect, url_for
 import dash
 import plotly.express as px
+import plotly.graph_objects as go
 from dash import dcc, html
 from dash.dependencies import Input, Output
 
@@ -45,7 +46,12 @@ app.layout = html.Div([
         inline=True 
     ),
 
-    html.Div(id="graphs-container", style={"display": "flex", "flex-direction": "row", "justify-content": "center"})
+    html.Div(id="graphs-container", style={"display": "flex", "flex-direction": "row", "justify-content": "center"}),
+
+    dcc.Dropdown(id="date-dropdown", options=[], value=None),
+
+    html.Label("Выберите дату для отображения прогноза:"),
+    dcc.Graph(id="weather-map", style={"height": "700px"})
 ])
 
 
@@ -122,17 +128,64 @@ def update_graph(selected_city, selected_days, selected_graphs):
 
 
 @app.callback(
+    Output("weather-map", "figure"),
+    Input("date-dropdown", "value"),
+)
+def update_map(selected_date):
+    filtered_df = df[df["date"] == selected_date]
+
+    if filtered_df.empty:
+        return go.Figure()
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scattermapbox(
+        lat=filtered_df["lat"],
+        lon=filtered_df["lon"],
+        mode="lines+markers",
+        line=dict(width=2),
+        marker=dict(size=10),
+        name="Маршрут",
+        hoverinfo="text",
+        text=[
+            f"{row["city_name"]}<br>Температура: {row["temperature"]}°C<br>Влажность: {row["humidity"]}%<br>Вероятность осадков: {row["probability_of_precipitation"] * 100}%"
+            for _, row in filtered_df.iterrows()
+        ]
+    ))
+
+    fig.update_layout(
+        mapbox=dict(
+            style="carto-positron",
+            zoom=5,
+            center={"lat": filtered_df["lat"].iloc[0], "lon": filtered_df["lon"].iloc[0]}
+        ),
+        showlegend=True,
+        title=f"Прогноз погоды на {selected_date}"
+    )
+
+    return fig
+
+
+@app.callback(
     Output("city-dropdown", "options"),
     Output("city-dropdown", "value"),
+    Output("date-dropdown", "options"),  # Добавляем вывод для даты
+    Output("date-dropdown", "value"),  # Добавляем значение по умолчанию для даты
     Input("city-dropdown", "id")
 )
 def update_dropdown_options(_):
     if not df.empty:
         unique_cities = df["city_name"].unique()
-        options = [{"label": city, "value": city} for city in unique_cities]
-        default_value = unique_cities[0]
-        return options, default_value
-    return [], None
+        options_cities = [{"label": city, "value": city} for city in unique_cities]
+        default_city_value = unique_cities[0]
+
+        unique_dates = df["date"].unique()
+        options_dates = [{"label": date, "value": date} for date in unique_dates]
+        default_date_value = unique_dates[0]
+
+        return options_cities, default_city_value, options_dates, default_date_value
+
+    return [], None, [], None
 
 
 @server.route("/", methods=["GET", "POST"])
