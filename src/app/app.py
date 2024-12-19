@@ -19,7 +19,7 @@ app = dash.Dash(__name__, server=server, url_base_pathname="/dash/")
 df = pd.DataFrame()
 
 app.layout = html.Div([
-    html.H1("Прогноз погоды", style={"textAlign": "center", "color": "#003366", "font-family": "Roboto, sans-serif"}),
+    html.H1("Прогноз погоды", style={"textAlign": "center", "font-family": "Roboto, sans-serif"}),
     html.Label("Выберите город:", style={"color": "#003366", "font-family": "Roboto, sans-serif"}),
     dcc.Dropdown(
         id="city-dropdown",
@@ -60,7 +60,7 @@ app.layout = html.Div([
         style={"width": "50%", "margin": "10px 0", "font-family": "Roboto, sans-serif"}
     ),
     dcc.Graph(id="weather-map", style={"height": "700px"})
-], style={"padding": "20px"})
+], style={"padding": "20px 100px"})
 
 
 @app.callback(
