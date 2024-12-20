@@ -11,8 +11,10 @@ from app.services.geocoder import Geocoder
 from app.services.weather import WeatherService
 from app.utils import is_connected
 from app.config import config
+from app.routes.api_routes import router as api_router
 
 server = Flask(__name__)
+server.register_blueprint(api_router, url_prefix="/api")
 
 app = dash.Dash(__name__, server=server, url_base_pathname="/dash/")
 
