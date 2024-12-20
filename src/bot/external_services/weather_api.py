@@ -10,8 +10,8 @@ class WeatherApi:
     async def get_weather_for(self, city: str, days: int = 5, timeout: int = 5) -> list[dict] | None:
         """Возвращает прогноз на заданное количество дней, если город найден. Иначе None.
            Выбрасывает ValueError, если передано некорректное число дней,
-                       ClientTimeout, если превышено время ожидания,
-                       ClientConnectorError, если произошла другая ошибка при подключении"""
+                       TimeoutError, если превышено время ожидания,
+                       ClientConnectionError, если произошла другая ошибка при подключении"""
         if not (1 <= days <= 5):
             raise ValueError("Days must be between 1 and 5")
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(timeout)) as session:
