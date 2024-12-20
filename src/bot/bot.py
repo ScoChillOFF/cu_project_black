@@ -7,6 +7,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from config import config
 from handlers.commands import router as commands_router
 from handlers.weather import router as weather_router
+from handlers.other import router as other_router
 from keyboards.set_menu import set_main_menu
 
 
@@ -20,6 +21,7 @@ async def main():
 
     dp.include_router(commands_router)
     dp.include_router(weather_router)
+    dp.include_router(other_router)
 
     await set_main_menu(bot)
 
