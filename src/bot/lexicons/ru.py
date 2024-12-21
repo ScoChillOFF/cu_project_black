@@ -36,6 +36,19 @@ LEXICON_RU = {
  
 {}""",
 
+    "city_repeat_error": """Город уже есть в маршруте""",
+
+    "forecast_begin": """Вот прогноз для твоего маршрута""",
+
+    "forecast_city": """<b>{i}. {city}</b>
+    
+{forecast}""",
+
+    "forecast_day": """    <b>{date}</b>:
+        <i>Температура:</i> <b>{temp}°C</b>
+        <i>Скорость ветра:</i> <b>{wind} м/c</b>
+        <i>Вероятность осадков:</i> <b>{pop}%</b>""",
+
     "wrong_input": """Не понял тебя :(""",
 
     "finished_forecast": """Обращайся!"""
