@@ -50,17 +50,38 @@ async def process_departure_city_input(message: Message, state: FSMContext):
 
 @router.message(StateFilter(FSMWeatherForm.fill_destination_city), F.text)
 async def process_destination_city_input(message: Message, state: FSMContext):
+    """Сохраняет прогноз для города назначения, если его удалось получить, иначе запрашивает повторную попытку.
+       Сохраняет маршрут (с одной точкой).
+       Запрашивает ввод точки назначения, если успешно"""
+    weather_api = WeatherApi()
+    city = message.text
+    days = await state.get_value("days", 5)
+    try:
+        forecast = await weather_api.get_weather_for(city=city, days=days)
+    except (TimeoutError, ClientConnectionError):
+        await message.answer(LEXICON_RU["weather_service_error"])
+        return
+    if forecast is None:
+        await message.answer(LEXICON_RU["city_not_found_error"])
+        return
+    route = await state.get_value("route")
+    route.append(city)
+    await state.update_data({"route": route})
     await message.answer(LEXICON_RU["confirm"], reply_markup=get_confirm_kb())
     await state.set_state(FSMWeatherForm.confirm)
 
 
 @router.callback_query(StateFilter(FSMWeatherForm.confirm), F.data == "view_route")
-async def process_view_route_option(callback: CallbackQuery):
+async def process_view_route_option(callback: CallbackQuery, state: FSMContext):
+    """Отображает текущий маршрут"""
     await callback.answer()
+    cities = await state.get_value("route")
+    cities_text = "\n".join([f"\t{i}. {city.capitalize()}" for i, city in enumerate(cities, start=1)])
+    text = LEXICON_RU["view_route"].format(cities_text)
     kb_builder = InlineKeyboardBuilder().row(
         InlineKeyboardButton(text="Назад", callback_data="back_to_confirm")
     )
-    await callback.message.edit_text(text="маршрут", reply_markup=kb_builder.as_markup())
+    await callback.message.edit_text(text=text, reply_markup=kb_builder.as_markup())
 
 
 @router.callback_query(StateFilter(FSMWeatherForm.confirm), F.data == "new_point")
