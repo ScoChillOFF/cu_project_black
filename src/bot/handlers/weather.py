@@ -8,6 +8,8 @@ from aiohttp.client_exceptions import ClientConnectionError
 
 from asyncio.exceptions import TimeoutError
 
+from aiohttp.web_exceptions import HTTPServiceUnavailable
+
 from external_services.weather_api import WeatherApi
 from keyboards.inline import get_confirm_kb
 from states.states import FSMWeatherForm
@@ -37,7 +39,7 @@ async def process_departure_city_input(message: Message, state: FSMContext):
     days = await state.get_value("days", 5)
     try:
         forecast = await weather_api.get_weather_for(city=city, days=days)
-    except (TimeoutError, ClientConnectionError):
+    except (TimeoutError, ClientConnectionError, HTTPServiceUnavailable):
         await message.answer(LEXICON_RU["weather_service_error"])
         return
     if forecast is None:
@@ -52,13 +54,13 @@ async def process_departure_city_input(message: Message, state: FSMContext):
 async def process_destination_city_input(message: Message, state: FSMContext):
     """Сохраняет прогноз для города назначения, если его удалось получить, иначе запрашивает повторную попытку.
        Сохраняет маршрут (с одной точкой).
-       Запрашивает ввод точки назначения, если успешно"""
+       Показывает меню подтверждения прогноза, если успешно"""
     weather_api = WeatherApi()
     city = message.text
     days = await state.get_value("days", 5)
     try:
         forecast = await weather_api.get_weather_for(city=city, days=days)
-    except (TimeoutError, ClientConnectionError):
+    except (TimeoutError, ClientConnectionError, HTTPServiceUnavailable):
         await message.answer(LEXICON_RU["weather_service_error"])
         return
     if forecast is None:
@@ -86,6 +88,7 @@ async def process_view_route_option(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(StateFilter(FSMWeatherForm.confirm), F.data == "new_point")
 async def process_new_point_option(callback: CallbackQuery, state: FSMContext):
+    """Перенаправляет на ввод промежуточной точки"""
     await callback.answer()
     await callback.message.edit_text(text=LEXICON_RU["fill_additional_city"])
     await state.set_state(FSMWeatherForm.fill_additional_city)
@@ -93,6 +96,23 @@ async def process_new_point_option(callback: CallbackQuery, state: FSMContext):
 
 @router.message(StateFilter(FSMWeatherForm.fill_additional_city), F.text)
 async def process_additional_city_input(message: Message, state: FSMContext):
+    """Сохраняет прогноз для города назначения, если его удалось получить, иначе запрашивает повторную попытку.
+           Сохраняет маршрут (с одной точкой).
+           Показывает меню подтверждения прогноза, если успешно"""
+    weather_api = WeatherApi()
+    city = message.text
+    days = await state.get_value("days", 5)
+    try:
+        forecast = await weather_api.get_weather_for(city=city, days=days)
+    except (TimeoutError, ClientConnectionError, HTTPServiceUnavailable):
+        await message.answer(LEXICON_RU["weather_service_error"])
+        return
+    if forecast is None:
+        await message.answer(LEXICON_RU["city_not_found_error"])
+        return
+    route = await state.get_value("route")
+    route.insert(-1, city)
+    await state.update_data({"route": route})
     await message.answer(text=LEXICON_RU["additional_city_success"])
     await message.answer(LEXICON_RU["confirm"], reply_markup=get_confirm_kb())
     await state.set_state(FSMWeatherForm.confirm)
@@ -101,6 +121,7 @@ async def process_additional_city_input(message: Message, state: FSMContext):
 @router.callback_query(StateFilter(FSMWeatherForm.confirm, FSMWeatherForm.fill_additional_city),
                        F.data == "back_to_confirm")
 async def process_back_to_confirm_option(callback: CallbackQuery, state: FSMContext):
+    """Показывает меню подтверждения прогноза"""
     await callback.answer()
     await callback.message.edit_text(text=LEXICON_RU["confirm"], reply_markup=get_confirm_kb())
     await state.set_state(FSMWeatherForm.confirm)

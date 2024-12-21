@@ -2,6 +2,7 @@ import asyncio
 from pprint import pprint
 
 import aiohttp
+from aiohttp.web_exceptions import HTTPServiceUnavailable
 
 
 class WeatherApi:
@@ -11,13 +12,16 @@ class WeatherApi:
         """Возвращает прогноз на заданное количество дней, если город найден. Иначе None.
            Выбрасывает ValueError, если передано некорректное число дней,
                        TimeoutError, если превышено время ожидания,
-                       ClientConnectionError, если произошла другая ошибка при подключении"""
+                       ClientConnectionError, если произошла другая ошибка при подключении
+                       HTTPServiceUnavailable, если сервис погоды не может получить данные"""
         if not (1 <= days <= 5):
             raise ValueError("Days must be between 1 and 5")
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(timeout)) as session:
             async with session.get(f"{self.base_url}/{city}?days={days}") as r:
                 if r.status == 404:
                     return None
+                if r.status == 503:
+                    raise HTTPServiceUnavailable
                 return await r.json()
 
 

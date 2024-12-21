@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 
 from app.services.weather import WeatherService
 from app.config import config
-
+from requests import RequestException
 
 router = Blueprint("api", __name__)
 
@@ -14,7 +14,10 @@ def get_weather(city: str):
         return jsonify({"reason": "Bad time interval provided. Must be a number between 1 and 5"}), 400
 
     weather_service = WeatherService(config.api_key)
-    forecast = weather_service.get_forecast_for(city, int(days))
+    try:
+        forecast = weather_service.get_forecast_for(city, int(days))
+    except RequestException:
+        return jsonify({"reason": "External service unavailable"}), 503
     if not forecast:
         return jsonify({"reason": "Not found"}), 404
     return forecast
