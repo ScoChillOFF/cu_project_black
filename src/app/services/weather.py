@@ -4,7 +4,7 @@ import requests
 
 from statistics import mean
 
-from app.services.geocoder import Geocoder
+from services.geocoder import Geocoder
 
 
 class WeatherService:

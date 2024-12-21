@@ -7,11 +7,12 @@ import plotly.graph_objects as go
 from dash import dcc, html
 from dash.dependencies import Input, Output
 
-from app.services.geocoder import Geocoder
-from app.services.weather import WeatherService
-from app.utils import is_connected
-from app.config import config
-from app.routes.api_routes import router as api_router
+from services.geocoder import Geocoder
+from services.weather import WeatherService
+from utils import is_connected
+from config import config
+from routes.api_routes import router as api_router
+
 
 server = Flask(__name__)
 server.register_blueprint(api_router, url_prefix="/api")
@@ -232,3 +233,7 @@ def get_cities_forecasts_with_coords(cities: list[str]) -> (list[dict] | None, s
 @server.route("/dash/")
 def dash_view():
     return app.index()
+
+
+if __name__ == "__main__":
+    server.run(debug=True)

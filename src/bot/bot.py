@@ -11,7 +11,7 @@ from handlers.other import router as other_router
 from keyboards.set_menu import set_main_menu
 
 
-async def main():
+async def run_bot():
     logging.basicConfig(level=logging.INFO)
 
     storage = MemoryStorage()
@@ -30,4 +30,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(run_bot())

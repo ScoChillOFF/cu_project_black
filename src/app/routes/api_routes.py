@@ -1,8 +1,9 @@
 from flask import Blueprint, request, jsonify
 
-from app.services.weather import WeatherService
-from app.config import config
+from services.weather import WeatherService
+from config import config
 from requests import RequestException
+
 
 router = Blueprint("api", __name__)
 
